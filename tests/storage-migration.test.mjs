@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import test from "node:test";
+import {
+  createSchemaReadiness,
+  EVALUATION_REQUESTS_SCHEMA_SQL,
+} from "../db/runtime-schema.mjs";
 
 function statements(sql) {
   return sql.split("--> statement-breakpoint").map((statement) => statement.trim()).filter(Boolean);
@@ -26,7 +30,7 @@ test("legacy storage migration preserves only abuse-control storage and its inde
   await applyMigration(database, "../drizzle/0003_remove_legacy_storage.sql");
 
   assert.deepEqual(objectNames(database, "table"), ["evaluation_requests", "sqlite_sequence"]);
-  assert.ok(objectNames(database, "index").includes("evaluation_requests_identity_created_idx"));
+  assert.deepEqual(objectNames(database, "index"), ["evaluation_requests_identity_created_idx"]);
   assert.deepEqual({ ...database.prepare("SELECT identity_hash, created_at FROM evaluation_requests").get() }, {
     identity_hash: "test-hash",
     created_at: "2026-08-27T00:00:00.000Z",
@@ -42,6 +46,22 @@ test("legacy storage cleanup is idempotent and tolerates a partial old schema", 
   await applyMigration(database, "../drizzle/0003_remove_legacy_storage.sql");
   await applyMigration(database, "../drizzle/0003_remove_legacy_storage.sql");
 
+  for (const statement of EVALUATION_REQUESTS_SCHEMA_SQL) database.exec(statement);
+
   assert.deepEqual(objectNames(database, "table"), ["evaluation_requests", "sqlite_sequence"]);
+  assert.deepEqual(objectNames(database, "index"), ["evaluation_requests_identity_created_idx"]);
   database.close();
+});
+
+test("schema initialization retries after a transient D1 failure and shares concurrent work", async () => {
+  let attempts = 0;
+  const ensureReady = createSchemaReadiness(async () => {
+    attempts += 1;
+    if (attempts === 1) throw new Error("temporary D1 error");
+  });
+
+  await assert.rejects(ensureReady(), /temporary D1 error/);
+  await Promise.all([ensureReady(), ensureReady()]);
+
+  assert.equal(attempts, 2);
 });

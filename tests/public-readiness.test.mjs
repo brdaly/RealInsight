@@ -3,13 +3,14 @@ import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
 test("the public storage and AI boundaries are fail-closed and accurately disclosed", async () => {
-  const [environment, route, rateCore, rateLimit, schema, database, migration, app, privacy] = await Promise.all([
+  const [environment, route, rateCore, rateLimit, schema, database, runtimeSchema, migration, app, privacy] = await Promise.all([
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
     readFile(new URL("../app/api/evaluate/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/rate-limit-core.mjs", import.meta.url), "utf8"),
     readFile(new URL("../lib/rate-limit.ts", import.meta.url), "utf8"),
     readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../db/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../db/runtime-schema.mjs", import.meta.url), "utf8"),
     readFile(new URL("../drizzle/0003_remove_legacy_storage.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/RealInsightApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../PRIVACY.md", import.meta.url), "utf8"),
@@ -23,7 +24,7 @@ test("the public storage and AI boundaries are fail-closed and accurately disclo
   assert.match(rateLimit, /CLAIM_EVALUATION_REQUEST_SQL/);
   assert.doesNotMatch(rateCore, /x-forwarded-for/i);
 
-  assert.doesNotMatch(`${schema}\n${database}`, /CREATE TABLE IF NOT EXISTS (buyer_profiles|listings|evaluations)|sqliteTable\("(buyer_profiles|listings|evaluations)"/);
+  assert.doesNotMatch(`${schema}\n${database}\n${runtimeSchema}`, /CREATE TABLE IF NOT EXISTS (buyer_profiles|listings|evaluations)|sqliteTable\("(buyer_profiles|listings|evaluations)"/);
   assert.equal([...migration.matchAll(/DROP TABLE IF EXISTS/g)].length, 3);
   assert.doesNotMatch(migration, /evaluation_requests/);
 
@@ -48,7 +49,12 @@ test("repository publication controls are present and npm publishing remains blo
   assert.equal(manifest.private, true);
   assert.equal(manifest.license, "UNLICENSED");
   assert.equal(manifest.packageManager, "pnpm@11.9.0");
-  assert.match(workflow, /node-version: 22\.23\.2/);
+  assert.match(workflow, /uses: actions\/checkout@[a-f0-9]{40}/);
+  assert.match(workflow, /persist-credentials: false/);
+  assert.match(workflow, /uses: pnpm\/setup@[a-f0-9]{40}/);
+  assert.match(workflow, /runtime: node@22\.23\.2/);
+  assert.match(workflow, /install: false/);
+  assert.doesNotMatch(workflow, /pnpm\/action-setup|actions\/setup-node/);
   assert.match(workflow, /run: pnpm audit/);
   assert.match(workflow, /run: pnpm typecheck/);
   assert.match(dependabot, /package-ecosystem: npm/);

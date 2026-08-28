@@ -77,10 +77,14 @@ The runtime schema now contains only `evaluation_requests`. Migration
 `0003_remove_legacy_storage.sql` idempotently drops the old `evaluations`,
 `listings`, and `buyer_profiles` tables without touching rate-limit records.
 Committing the migration does not prove that a deployed D1 database has run it.
-Before applying it in production, identify the exact database, inspect its
-migration journal, take a D1 recovery bookmark or backup, deploy the code that
-no longer recreates the old tables, apply the reviewed migration, and verify the
-remaining schema. Treat that production operation as a separate approval gate.
+Before applying it in production, resolve the exact Sites `DB` binding, record
+the schema and table counts without exporting legacy contents, verify the
+packaged migration, deploy the code that no longer recreates the old tables,
+and verify the remaining schema. Because the managed Sites interface does not
+expose a separate D1 backup or restore control, treat the legacy-table deletion
+as irreversible and keep it behind a separate approval gate.
+The exact release and rollback gates are documented in
+[docs/production-d1.md](./docs/production-d1.md).
 
 ## Safety controls
 
@@ -133,6 +137,7 @@ Prerequisites: Node.js 22.13 or newer and pnpm.
     pnpm lint
     pnpm typecheck
     pnpm build
+    pnpm verify:package
     pnpm test:unit
 
 The combined local check is:
