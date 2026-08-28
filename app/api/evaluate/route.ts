@@ -1,10 +1,11 @@
-import type { DecisionResult, ExtractionDraft } from "@/lib/contracts";
+import type { ConfirmedListingFacts, DecisionResult, EvidenceEntry, ExtractionDraft } from "@/lib/contracts";
 import { getDemoListing } from "@/lib/demo-listings";
 import { addVisitorConfirmations, buildEvidenceLedger } from "@/lib/evidence-ledger.mjs";
 import { MAX_REQUEST_BYTES, type EvaluatePayload, validateEvaluationPayload } from "@/lib/evaluation-guard";
 import { extractListingWithEvidence } from "@/lib/extractor.mjs";
 import { analyzeWithOpenAI } from "@/lib/openai-analysis";
 import { claimEvaluationRequest } from "@/lib/rate-limit";
+import { PublicRequestError, readBoundedJson, requireSameOrigin } from "@/lib/request-json";
 import { decideListing } from "@/lib/scoring.mjs";
 import { getVisitorSession, visitorJson } from "@/lib/visitor-session";
 
@@ -46,8 +47,8 @@ function draftFor(payload: EvaluatePayload): ExtractionDraft | null {
   if (!resolved) return null;
   const extraction = extractListingWithEvidence(resolved.text);
   return {
-    facts: extraction.facts,
-    evidenceLedger: buildEvidenceLedger(extraction),
+    facts: extraction.facts as ConfirmedListingFacts,
+    evidenceLedger: buildEvidenceLedger(extraction) as EvidenceEntry[],
     provenance: resolved.provenance,
     listingText: resolved.text,
   };
@@ -56,11 +57,8 @@ function draftFor(payload: EvaluatePayload): ExtractionDraft | null {
 export async function POST(request: Request) {
   const visitor = getVisitorSession(request);
   try {
-    const contentLength = Number(request.headers.get("content-length") ?? 0);
-    if (contentLength > MAX_REQUEST_BYTES) {
-      return visitorJson(visitor, { error: "This request is too large." }, { status: 413 });
-    }
-    const payload = await request.json() as EvaluatePayload;
+    requireSameOrigin(request);
+    const payload = await readBoundedJson<EvaluatePayload>(request, MAX_REQUEST_BYTES);
     const errors = validateEvaluationPayload(payload);
     if (errors.length) return visitorJson(visitor, { error: errors.join(" ") }, { status: 400 });
 
@@ -76,23 +74,24 @@ export async function POST(request: Request) {
       buildEvidenceLedger(extraction),
       extraction.facts,
       confirmedFacts,
-    );
+    ) as EvidenceEntry[];
     const deterministic = decideListing({
       profile: payload.profile!,
       listingText: draft.listingText,
       facts: confirmedFacts,
       evidenceLedger: confirmedLedger,
-    });
+    }) as Omit<DecisionResult, "analysisMode" | "analysisNotice">;
 
     let analysisMode: DecisionResult["analysisMode"] = "deterministic-demo";
     let analysisNotice = "The evidence and decision workflow ran locally. Live AI analysis is not configured in this environment.";
     let questions = deterministic.questions;
     const apiKey = process.env.OPENAI_API_KEY?.trim();
-    const aiEnabled = process.env.REALINSIGHT_AI_ENABLED !== "false";
+    const aiEnabled = process.env.REALINSIGHT_AI_ENABLED?.trim().toLowerCase() === "true";
 
     if (apiKey && aiEnabled) {
       try {
-        const rateLimit = await claimEvaluationRequest(request, visitor.id);
+        const rateLimitSecret = process.env.REALINSIGHT_RATE_LIMIT_HASH_SECRET?.trim() || apiKey;
+        const rateLimit = await claimEvaluationRequest(request, visitor.id, rateLimitSecret);
         if (rateLimit.allowed) {
           const analysis = await analyzeWithOpenAI({
             apiKey,
@@ -134,7 +133,10 @@ export async function POST(request: Request) {
       confirmedFacts,
       persistence: "not_saved",
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof PublicRequestError) {
+      return visitorJson(visitor, { error: error.message }, { status: error.status });
+    }
     return visitorJson(visitor, { error: "RealInsight could not complete this step. Please try again." }, { status: 500 });
   }
 }

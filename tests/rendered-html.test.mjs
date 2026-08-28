@@ -13,7 +13,7 @@ test("ships a Daly Ventures governed-agent workflow rather than the legacy ranki
     readFile(new URL("../package.json", import.meta.url), "utf8"),
   ]);
   assert.match(layout, /Daly Ventures applied-AI demonstration/);
-  assert.match(app, /Daly Ventures AI Lab · Live prototype/);
+  assert.match(app, /Daly Ventures AI Lab · Governed prototype/);
   assert.match(app, /A listing is designed to sell/);
   assert.match(app, /Define three boundaries/);
   assert.match(app, /Review what the system extracted/);
@@ -23,7 +23,7 @@ test("ships a Daly Ventures governed-agent workflow rather than the legacy ranki
   assert.match(app, /Stopped by your rules|decisionLabel/);
   assert.match(app, /Questions to verify next/);
   assert.match(app, /Agentic does not have to mean uncontrolled/);
-  assert.match(app, /Nothing is saved to a shortlist/);
+  assert.match(app, /Listing text, buyer boundaries, confirmed facts, evidence, and decision briefs are not stored/);
   assert.match(scoring, /SCORING_VERSION = "ri-v2\.0"/);
   assert.match(scoring, /findSupportedPhrase/);
   assert.doesNotMatch(scoring, /offer_range|location_quality|value_vs_comps/);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
+import Link from "next/link";
 import type {
   BuyerLens,
   ConfirmedListingFacts,
@@ -186,7 +187,7 @@ export function RealInsightApp() {
 
       <section className="hero">
         <div className="hero-copy">
-          <div className="eyebrow"><span /> Daly Ventures AI Lab · Live prototype</div>
+          <div className="eyebrow"><span /> Daly Ventures AI Lab · Governed prototype</div>
           <h1>A listing is designed to sell.<br /><em>RealInsight is designed to question it.</em></h1>
           <p>
             See how bounded AI, deterministic rules, and human confirmation turn messy
@@ -194,7 +195,7 @@ export function RealInsightApp() {
           </p>
           <div className="hero-actions">
             <a className="primary-link" href="#workspace">Try a safe demo <span>↓</span></a>
-            <span className="microcopy">No sign-up · No data saved · About 60 seconds</span>
+            <span className="microcopy">No sign-up · Inputs are not stored · About 60 seconds</span>
           </div>
         </div>
         <div className="agent-map" aria-label="RealInsight workflow diagram">
@@ -221,7 +222,7 @@ export function RealInsightApp() {
       <section className="workspace-shell" id="workspace">
         <div className="workspace-heading">
           <div>
-            <p className="section-kicker">Live decision workflow</p>
+            <p className="section-kicker">Interactive decision workflow</p>
             <h2>From listing copy to a defensible next step.</h2>
           </div>
           <div className="stepper" aria-label="Workflow progress">
@@ -282,7 +283,11 @@ export function RealInsightApp() {
               </label>
               <div className="data-notice">
                 <span>Data boundary</span>
-                <p>Nothing is saved to a shortlist. If live AI is enabled, confirmed listing text is sent to OpenAI only for bounded question drafting.</p>
+                <p>
+                  Listing text, buyer boundaries, confirmed facts, evidence, and decision briefs are not stored.
+                  The demo uses a 30-day anonymous session cookie and stores keyed-hash request timestamps for live-AI abuse controls.
+                  If live AI is enabled, the confirmed inputs, evidence, and a hashed anonymous safety identifier are sent server-side to OpenAI only for bounded question drafting.
+                </p>
               </div>
               <button className="primary-button" type="submit" disabled={loading}>
                 {loading ? "Extracting facts…" : "Extract facts"} <span>→</span>
@@ -343,7 +348,7 @@ export function RealInsightApp() {
               <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
               <span>
                 <strong>I reviewed these values.</strong>
-                Unknowns can remain unknown. I understand that, when live AI is enabled, this listing text may be sent to OpenAI for bounded analysis and is not saved by this demo.
+                Unknowns can remain unknown. I understand that, when live AI is enabled, the listing text, my buyer boundaries, confirmed facts, evidence ledger, and a hashed anonymous safety identifier are sent server-side to OpenAI for bounded question drafting. The demo does not store those inputs or the decision brief.
               </span>
             </label>
             {error && <p className="error-message" role="alert">{error}</p>}
@@ -417,7 +422,7 @@ export function RealInsightApp() {
             <section className="findings-section">
               <div className="findings-heading">
                 <div><p className="section-kicker">Reviewable reasoning</p><h4>Findings stay attached to evidence.</h4></div>
-                <p>AI language can clarify ambiguity. It cannot change the rule outcome.</p>
+                <p>Evidence-linked explanations remain reviewable. AI can draft questions; it cannot change the rule outcome.</p>
               </div>
               <div className="findings-grid">
                 {result.findings.map((finding, index) => (
@@ -470,7 +475,7 @@ export function RealInsightApp() {
           <p>RealInsight is a compact example of how Daly Ventures turns an ambiguous workflow into a governed, useful AI system.</p>
         </div>
         <div className="architecture-grid">
-          <article><span>01 · Interpret</span><h3>AI handles ambiguity</h3><p>Language models turn messy text into structured findings and targeted follow-up questions.</p></article>
+          <article><span>01 · Interpret</span><h3>Bounded interpretation</h3><p>Deterministic extraction preserves source quotes; when enabled, AI drafts targeted follow-up questions.</p></article>
           <article><span>02 · Ground</span><h3>Evidence stays visible</h3><p>Extracted values retain their source excerpts. Missing evidence is never silently filled in.</p></article>
           <article><span>03 · Govern</span><h3>Code owns authority</h3><p>Budget, deal-breakers, scoring, and decision states live in versioned deterministic rules.</p></article>
           <article><span>04 · Approve</span><h3>People stay in control</h3><p>A human confirmation gate separates machine interpretation from consequential action.</p></article>
@@ -496,7 +501,10 @@ export function RealInsightApp() {
           <span className="brand-copy"><strong>Daly Ventures</strong><small>AI strategy · prototypes · transformation</small></span>
         </div>
         <p>RealInsight is a demonstration, not real-estate, appraisal, inspection, lending, legal, or financial advice. Verify facts with qualified professionals.</p>
-        <a href="https://dalyventures.com/">dalyventures.com ↗</a>
+        <div className="footer-links">
+          <Link href="/privacy">Privacy</Link>
+          <a href="https://dalyventures.com/">dalyventures.com ↗</a>
+        </div>
       </footer>
     </main>
   );

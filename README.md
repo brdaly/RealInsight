@@ -8,10 +8,11 @@ reviewable next step:
 - **Verify before touring**
 - **Worth a closer look**
 
-The public demonstration is deliberately bounded. AI interprets language and
-drafts evidence-linked questions. Versioned application code owns every rule,
-fit calculation, coverage calculation, and decision state. A visitor must
-review and confirm extracted facts before evaluation.
+The public demonstration is deliberately bounded. Deterministic extraction
+preserves exact source excerpts, while optional AI drafts evidence-linked
+questions. Versioned application code owns every rule, fit calculation,
+coverage calculation, and decision state. A visitor must review and confirm
+extracted facts before evaluation.
 
 ## Demonstration flow
 
@@ -54,15 +55,32 @@ deal-breaker and cannot generate a valuation or offer recommendation.
 
 - The application does not save listing text, buyer inputs, extracted facts, or
   decision briefs to a shortlist or application database.
-- An anonymous HttpOnly session cookie supports abuse controls.
-- When OPENAI_API_KEY is configured and the operator kill switch is on,
+- A random anonymous HttpOnly, SameSite=Lax session cookie lasts for up to 30
+  days and supports abuse controls.
+- When `OPENAI_API_KEY` is configured and `REALINSIGHT_AI_ENABLED=true`,
   confirmed listing text, confirmed facts, buyer boundaries, and the evidence
-  ledger are sent server-side to the OpenAI Responses API for bounded question
-  drafting.
+  ledger, together with a hashed anonymous safety identifier, are sent
+  server-side to the OpenAI Responses API for bounded question drafting.
 - Visitors are told not to submit names, contact details, confidential
   information, or non-public documents.
-- D1 stores only hashed rate-limit identities and timestamps, with stale
-  request records cleaned opportunistically.
+- D1 stores only keyed-hash rate-limit identities and timestamps. The raw
+  Cloudflare-provided address or session identifier is not stored in that
+  table. Records older than 24 hours are cleaned opportunistically; this is not
+  an exact deletion schedule.
+
+The full application-specific notice is in [PRIVACY.md](./PRIVACY.md) and at
+`/privacy` in the running application.
+
+### Database migration
+
+The runtime schema now contains only `evaluation_requests`. Migration
+`0003_remove_legacy_storage.sql` idempotently drops the old `evaluations`,
+`listings`, and `buyer_profiles` tables without touching rate-limit records.
+Committing the migration does not prove that a deployed D1 database has run it.
+Before applying it in production, identify the exact database, inspect its
+migration journal, take a D1 recovery bookmark or backup, deploy the code that
+no longer recreates the old tables, apply the reviewed migration, and verify the
+remaining schema. Treat that production operation as a separate approval gate.
 
 ## Safety controls
 
@@ -90,12 +108,17 @@ Copy .env.example to .env.local:
 
     OPENAI_API_KEY=
     OPENAI_MODEL_ID=gpt-5.6
-    REALINSIGHT_AI_ENABLED=true
+    REALINSIGHT_AI_ENABLED=false
     REALINSIGHT_DAILY_AI_CALL_LIMIT=500
+    REALINSIGHT_RATE_LIMIT_HASH_SECRET=
 
 OPENAI_API_KEY is optional for local development. Without it, the complete
 evidence and deterministic decision workflow remains available and is labeled
-**Rules demo**. Never put the API key in client code or a public field.
+**Rules demo**. Live AI is opt-in: it runs only when the flag is exactly `true`
+and an API key is present. In production, set
+`REALINSIGHT_RATE_LIMIT_HASH_SECRET` to a separate high-entropy secret; when it
+is blank, the server uses the API key as the keyed-hash secret. Never put either
+secret in client code or a public field.
 
 ## Local development
 
@@ -106,6 +129,14 @@ Prerequisites: Node.js 22.13 or newer and pnpm.
 
 ## Validation
 
+    pnpm audit
+    pnpm lint
+    pnpm typecheck
+    pnpm build
+    pnpm test:unit
+
+The combined local check is:
+
     pnpm test
 
 The test suite performs a production build and verifies exact evidence spans,
@@ -113,6 +144,21 @@ explicit evidence gaps, visitor corrections, deterministic decisions,
 negation-aware deal-breakers, synthetic-demo provenance, the absence of legacy
 offer, photo, and market-ranking surfaces, confirmation requirements, session
 security, rate-limit identity handling, and the bounded OpenAI contract.
+
+GitHub Actions repeats the dependency audit, lint, type-check, production build,
+and unit tests on every pull request and every push to `main`, using Node
+22.23.2 and pnpm 11.9.0.
+
+## Security and licensing
+
+Please report security issues privately as described in
+[SECURITY.md](./SECURITY.md); do not open a public vulnerability issue.
+
+RealInsight is public source-visible portfolio software, not open-source
+software. Copyright is retained and reuse is not authorized except as required
+by GitHub's Terms of Service, applicable law, or written permission. See
+[LICENSE](./LICENSE). The `"private": true` package setting intentionally
+prevents accidental publication to npm and does not control GitHub visibility.
 
 ## Daly Ventures integration
 

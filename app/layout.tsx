@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const safeHost = host && /^[a-z0-9.-]+(?::\d+)?$/i.test(host) ? host : null;
   const protocol = forwardedProtocol === "http" || safeHost?.startsWith("localhost:") ? "http" : "https";
   const origin = safeHost ? new URL(`${protocol}://${safeHost}`) : fallbackOrigin;
-  const socialImage = new URL("/og.png", origin).toString();
+  const socialImage = new URL("/social-preview.jpg", origin).toString();
 
   return {
     metadataBase: origin,

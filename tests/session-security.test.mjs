@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { MAX_LISTING_TEXT_LENGTH, validateEvaluationPayload } from "../lib/evaluation-guard.ts";
 import { getRateLimitIdentity } from "../lib/rate-limit-core.mjs";
+import { PublicRequestError, readBoundedJson, requireSameOrigin } from "../lib/request-json.ts";
 import { getVisitorSession, visitorJson } from "../lib/visitor-session.ts";
 
 const validPayload = {
@@ -73,6 +74,43 @@ test("rate-limit identity prefers Cloudflare IP and falls back to the visitor se
   }), "visitor-123"), "203.0.113.7");
   assert.equal(getRateLimitIdentity(new Request("https://example.com", {
     headers: { "x-forwarded-for": "198.51.100.2, 198.51.100.3" },
-  }), "visitor-123"), "198.51.100.2");
+  }), "visitor-123"), "session:visitor-123");
   assert.equal(getRateLimitIdentity(new Request("http://localhost"), "visitor-123"), "session:visitor-123");
+});
+
+test("JSON intake enforces content type, origin, and the actual streamed byte limit", async () => {
+  const request = new Request("https://realinsight.example/api/evaluate", {
+    method: "POST",
+    headers: { "content-type": "application/json", origin: "https://realinsight.example" },
+    body: JSON.stringify({ ok: true }),
+  });
+  requireSameOrigin(request);
+  assert.deepEqual(await readBoundedJson(request, 1_000), { ok: true });
+
+  assert.throws(
+    () => requireSameOrigin(new Request("https://realinsight.example/api/evaluate", {
+      headers: { origin: "https://attacker.example" },
+    })),
+    (error) => error instanceof PublicRequestError && error.status === 403,
+  );
+
+  await assert.rejects(
+    readBoundedJson(new Request("https://realinsight.example/api/evaluate", {
+      method: "POST",
+      headers: { "content-type": "text/plain" },
+      body: "{}",
+    }), 1_000),
+    (error) => error instanceof PublicRequestError && error.status === 415,
+  );
+
+  const oversized = new Request("https://realinsight.example/api/evaluate", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text: "x".repeat(1_000) }),
+  });
+  assert.equal(oversized.headers.get("content-length"), null);
+  await assert.rejects(
+    readBoundedJson(oversized, 200),
+    (error) => error instanceof PublicRequestError && error.status === 413,
+  );
 });
