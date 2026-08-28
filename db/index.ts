@@ -1,6 +1,10 @@
 import { env } from "cloudflare:workers";
 import { drizzle } from "drizzle-orm/d1";
 import * as schema from "./schema";
+import {
+  createSchemaReadiness,
+  EVALUATION_REQUESTS_SCHEMA_SQL,
+} from "./runtime-schema.mjs";
 
 export function getDb() {
   if (!env.DB) {
@@ -12,24 +16,21 @@ export function getDb() {
   return drizzle(env.DB, { schema });
 }
 
-let schemaReady: Promise<void> | null = null;
+const ensureSchemaReady = createSchemaReadiness(async () => {
+  if (!env.DB) {
+    throw new Error("Cloudflare D1 binding `DB` is unavailable.");
+  }
+
+  await env.DB.batch(
+    EVALUATION_REQUESTS_SCHEMA_SQL.map((statement) => env.DB.prepare(statement))
+  );
+});
 
 export async function getReadyDb() {
   if (!env.DB) {
     return getDb();
   }
 
-  schemaReady ??= (async () => {
-    await env.DB.batch([
-      env.DB.prepare(`CREATE TABLE IF NOT EXISTS evaluation_requests (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        identity_hash TEXT NOT NULL,
-        created_at TEXT NOT NULL
-      )`),
-      env.DB.prepare("CREATE INDEX IF NOT EXISTS evaluation_requests_identity_created_idx ON evaluation_requests(identity_hash, created_at)"),
-    ]);
-  })();
-
-  await schemaReady;
+  await ensureSchemaReady();
   return getDb();
 }
