@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1784397880805,
+      "tag": "0000_organic_gamora",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1784400447201,
+      "tag": "0001_slimy_menace",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784400499884,
+      "tag": "0002_fixed_red_ghost",
+      "breakpoints": true
+    }
+  ]
+}
