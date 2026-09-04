@@ -30,7 +30,7 @@ updates:
       # When upgrading Node, update engines, CI environment, and CHANGELOG together.
       - dependency-name: "@types/node"
         update-types:
-          - major
+          - version-update:semver-major
 
   - package-ecosystem: github-actions
     directory: /
