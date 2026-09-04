@@ -13,9 +13,24 @@ updates:
       routine-npm-updates:
         patterns:
           - "*"
+        exclude-patterns:
+          - "@types/node"
         update-types:
           - minor
           - patch
+      runtime-types:
+        patterns:
+          - "@types/node"
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # @types/node major versions require deliberate Node runtime upgrade.
+      # Keep on Node 22.x until runtime is intentionally upgraded.
+      # When upgrading Node, update engines, CI environment, and CHANGELOG together.
+      - dependency-name: "@types/node"
+        update-types:
+          - major
 
   - package-ecosystem: github-actions
     directory: /
