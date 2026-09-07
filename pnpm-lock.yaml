@@ -72,8 +72,8 @@ importers:
         specifier: 6.0.3
         version: 6.0.3
       vinext:
-        specifier: 1.0.0-beta.8
-        version: 1.0.0-beta.8(@vitejs/plugin-react@6.1.1(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1)))(@vitejs/plugin-rsc@0.5.34(react-dom@19.2.8(react@19.2.8))(react-server-dom-webpack@19.2.8(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(webpack@5.108.4(esbuild@0.28.1)))(react@19.2.8)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1)))(next@16.3.4(@babel/core@7.29.7)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-server-dom-webpack@19.2.8(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(webpack@5.108.4(esbuild@0.28.1)))(react@19.2.8)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1))
+        specifier: 1.0.0-beta.9
+        version: 1.0.0-beta.9(@vitejs/plugin-react@6.1.1(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1)))(@vitejs/plugin-rsc@0.5.34(react-dom@19.2.8(react@19.2.8))(react-server-dom-webpack@19.2.8(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(webpack@5.108.4(esbuild@0.28.1)))(react@19.2.8)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1)))(next@16.3.4(@babel/core@7.29.7)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-server-dom-webpack@19.2.8(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(webpack@5.108.4(esbuild@0.28.1)))(react@19.2.8)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1))
       vite:
         specifier: 8.2.2
         version: 8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1)
@@ -2342,8 +2342,8 @@ packages:
     resolution: {integrity: sha512-4gd7VpWNQNB4UKKCFFVcp1AVv+FMOgs9NKzjHKusc8jTMhd5eL1NqQqOpE0KzMds804/yHlglp3uxgluOqAPLw==}
     engines: {node: '>= 0.4'}
 
-  ipaddr.js@2.4.0:
-    resolution: {integrity: sha512-9VGk3HGanVE6JoZXHiCpnGy5X0jYDnN4EA4lntFPj+1vIWlFhIylq2CrrCOJH9EAhc5CYhq18F2Av2tgoAPsYQ==}
+  ipaddr.js@2.5.0:
+    resolution: {integrity: sha512-aq+t5NAc+cS6rZQQVWC2x98CPqGtKKTMDd4Gaodv0wShnItdKg/51djkGJ1hqH+Oy0ivDftCbSLCQob8zso01w==}
     engines: {node: '>= 10'}
 
   is-array-buffer@3.0.5:
@@ -3285,8 +3285,8 @@ packages:
   uri-js@4.4.1:
     resolution: {integrity: sha512-7rKUyy33Q1yc98pQ1DAmLtwX109F7TIfWlW1Ydo8Wl1ii1SeHieeh0HHfPeL2fMXK6z0s8ecKs9frCuLJvndBg==}
 
-  vinext@1.0.0-beta.8:
-    resolution: {integrity: sha512-JXiyi0V13PkcIHWUiql3wO/UyNlI1R325RBwBx4CIDa8dd4lgnI90LN5bD2V1J6T+EU8eYCYnKDmtxWjRdL0cg==}
+  vinext@1.0.0-beta.9:
+    resolution: {integrity: sha512-pKsaR9mzbfwifb0hQjrq/RQJ/yq9YGwWGusIxEV+bQabdeatm7KOgprKhcrr6LIrqzOQjZBYyU1wXJlb/3Gkcw==}
     engines: {node: '>=22'}
     hasBin: true
     peerDependencies:
@@ -5496,7 +5496,7 @@ snapshots:
       hasown: 2.0.4
       side-channel: 1.1.1
 
-  ipaddr.js@2.4.0: {}
+  ipaddr.js@2.5.0: {}
 
   is-array-buffer@3.0.5:
     dependencies:
@@ -6514,13 +6514,13 @@ snapshots:
     dependencies:
       punycode: 2.3.1
 
-  vinext@1.0.0-beta.8(@vitejs/plugin-react@6.1.1(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1)))(@vitejs/plugin-rsc@0.5.34(react-dom@19.2.8(react@19.2.8))(react-server-dom-webpack@19.2.8(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(webpack@5.108.4(esbuild@0.28.1)))(react@19.2.8)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1)))(next@16.3.4(@babel/core@7.29.7)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-server-dom-webpack@19.2.8(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(webpack@5.108.4(esbuild@0.28.1)))(react@19.2.8)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1)):
+  vinext@1.0.0-beta.9(@vitejs/plugin-react@6.1.1(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1)))(@vitejs/plugin-rsc@0.5.34(react-dom@19.2.8(react@19.2.8))(react-server-dom-webpack@19.2.8(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(webpack@5.108.4(esbuild@0.28.1)))(react@19.2.8)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1)))(next@16.3.4(@babel/core@7.29.7)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react-server-dom-webpack@19.2.8(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(webpack@5.108.4(esbuild@0.28.1)))(react@19.2.8)(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1)):
     dependencies:
       '@unpic/react': 1.0.2(next@16.3.4(@babel/core@7.29.7)(@types/node@22.20.1)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       '@vercel/og': 0.8.6
       '@vinext/types': 1.0.0-beta.2
       '@vitejs/plugin-react': 6.1.1(vite@8.2.2(@types/node@22.20.1)(esbuild@0.28.1)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.1))
-      ipaddr.js: 2.4.0
+      ipaddr.js: 2.5.0
       magic-string: 0.30.21
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
@@ -6535,13 +6535,13 @@ snapshots:
 
   vite-plugin-commonjs@0.10.4:
     dependencies:
-      acorn: 8.17.0
+      acorn: 8.18.0
       magic-string: 0.30.21
       vite-plugin-dynamic-import: 1.6.0
 
   vite-plugin-dynamic-import@1.6.0:
     dependencies:
-      acorn: 8.17.0
+      acorn: 8.18.0
       es-module-lexer: 1.7.0
       fast-glob: 3.3.3
       magic-string: 0.30.21
