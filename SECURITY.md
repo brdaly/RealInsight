@@ -9,8 +9,7 @@ demonstration does not promise support for older commits, forks, or deployments.
 
 Do not open a public issue or discussion for a suspected vulnerability.
 
-After GitHub private vulnerability reporting is enabled, use the repository's
-**Security → Advisories → Report a vulnerability** form:
+Use the repository's **Security → Advisories → Report a vulnerability** form:
 
 <https://github.com/brdaly/RealInsight/security/advisories/new>
 

@@ -14,7 +14,7 @@
     "audit": "pnpm audit --audit-level high",
     "audit:prod": "pnpm audit --prod --audit-level high",
     "test": "pnpm run build && pnpm run verify:package && pnpm run test:unit",
-    "test:unit": "node --test tests/*.test.mjs",
+    "test:unit": "node --import ./tests/support/register.mjs --test tests/*.test.mjs",
     "verify:package": "node tests/verify-package.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",

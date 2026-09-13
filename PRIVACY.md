@@ -1,6 +1,6 @@
 # RealInsight privacy notice
 
-_Updated August 27, 2026_
+_Updated September 13, 2026_
 
 This notice describes the application-specific behavior of the public
 RealInsight demonstration.

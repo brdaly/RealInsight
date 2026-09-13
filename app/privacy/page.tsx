@@ -13,7 +13,7 @@ export default function PrivacyPage() {
       <article>
         <p className="section-kicker">RealInsight demonstration</p>
         <h1>Privacy notice</h1>
-        <p className="policy-updated">Updated August 27, 2026</p>
+        <p className="policy-updated">Updated September 13, 2026</p>
 
         <h2>What the application does not store</h2>
         <p>
