@@ -57,3 +57,76 @@ test("websocket upgrade responses pass through untouched", () => {
   Object.defineProperty(upgrade, "webSocket", { value: {}, configurable: true });
   assert.equal(withSecurityHeaders(upgrade), upgrade);
 });
+
+// ---------------------------------------------------------------------------
+// Regression: a stream-backed body must survive the header pass.
+//
+// The first version rebuilt every response as `new Response(response.body, …)`.
+// That detaches a stream-backed body from the response that owns it, and under
+// `pnpm start` the stream then closed before it was read: `/og.png` and
+// `/social-preview.jpg` served 200 with zero bytes. These assert on the bytes
+// that come back, which a string-bodied fixture cannot catch.
+// ---------------------------------------------------------------------------
+
+function streamedResponse(chunks, init = {}) {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      for (const chunk of chunks) controller.enqueue(encoder.encode(chunk));
+      controller.close();
+    },
+  });
+  return new Response(stream, init);
+}
+
+test("a stream-backed body is delivered whole", async () => {
+  const original = streamedResponse(["binary-", "asset-", "payload"], {
+    headers: { "content-type": "image/png" },
+  });
+
+  const guarded = withSecurityHeaders(original);
+
+  assert.equal(await guarded.text(), "binary-asset-payload");
+  assert.equal(guarded.headers.get("content-type"), "image/png");
+  assert.equal(guarded.headers.get("X-Content-Type-Options"), "nosniff");
+});
+
+test("a multi-chunk stream is not truncated at the first chunk", async () => {
+  const chunks = Array.from({ length: 64 }, (_, index) => `chunk-${index};`);
+
+  const guarded = withSecurityHeaders(streamedResponse(chunks));
+
+  assert.equal(await guarded.text(), chunks.join(""));
+});
+
+test("a stream-backed body survives even when headers cannot be mutated", async () => {
+  const original = streamedResponse(["immutable-", "stream"]);
+  // Model a runtime that refuses header mutation, as workerd does for a
+  // fetch() response, so the rebuild fallback is exercised rather than skipped.
+  Object.defineProperty(original, "headers", {
+    value: new Proxy(original.headers, {
+      get(target, property) {
+        if (property === "set") {
+          return () => {
+            throw new TypeError("immutable headers");
+          };
+        }
+        const value = Reflect.get(target, property);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    }),
+  });
+
+  const guarded = withSecurityHeaders(original);
+
+  assert.equal(guarded.headers.get("X-Content-Type-Options"), "nosniff");
+  assert.equal(await guarded.text(), "immutable-stream");
+});
+
+test("the returned response carries every declared header on a streamed body", async () => {
+  const guarded = withSecurityHeaders(streamedResponse(["x"]));
+
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
+    assert.equal(guarded.headers.get(name), value, `missing ${name}`);
+  }
+});
