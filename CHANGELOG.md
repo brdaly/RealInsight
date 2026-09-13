@@ -40,12 +40,15 @@ First public demonstration.
   completes the workflow whenever the model is unavailable or refuses.
 - Evidence ledger, findings, and agent questions in the returned decision
   brief.
-- `/privacy` and `/disclaimer` routes, and `PRIVACY.md`.
+- `/privacy` route and `PRIVACY.md`.
 
 ### Security
-- Operator kill switch (`REALINSIGHT_AI_ENABLED`), a per-visitor and per-IP
-  ceiling of 20 live-AI calls per hour, and a configurable global daily
-  ceiling on live-AI calls.
+- Operator kill switch (`REALINSIGHT_AI_ENABLED`), a ceiling of 20 live-AI
+  calls per hour per IP **or** per session, and a configurable global daily
+  ceiling on live-AI calls. The hourly ceiling keys on the Cloudflare-provided
+  client address where there is one and on the anonymous session identifier
+  otherwise, so it is one limit per request, not two stacked limits: visitors
+  behind a shared address share a bucket.
 - Rate-limit identities stored as keyed hashes only. The raw
   Cloudflare-provided address and session identifier are never written to the
   database, and records older than 24 hours are cleaned opportunistically.
@@ -66,7 +69,7 @@ First public demonstration.
   decision briefs are not persisted.
 
 ### Technology
-- Next.js 16.3.4 on Cloudflare Workers via vinext
+- Next.js 16.3.3 on Cloudflare Workers via vinext (moved to 16.3.4 after this release; see Unreleased)
 - React 19.2
 - TypeScript 6.0.3
 - Cloudflare D1 with Drizzle ORM 0.45

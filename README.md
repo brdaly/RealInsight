@@ -102,7 +102,7 @@ The exact release and rollback gates are documented in
 - Operator kill switch
 - Deterministic fallback when AI is unavailable
 - Generic public errors and no provider-detail leakage
-- Security response headers on every response: `nosniff`, `strict-origin-when-cross-origin`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`, and a restricted `Permissions-Policy`
+- Security response headers on every response the Worker serves, which is every document, API route and `public/` file: `nosniff`, `strict-origin-when-cross-origin`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`, and a restricted `Permissions-Policy`. Build output under `/_next/static/` is served by the asset layer ahead of the Worker and does not carry them
 
 RealInsight is decision support, not real-estate, appraisal, inspection,
 lending, legal, or financial advice.

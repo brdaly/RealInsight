@@ -3,7 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
 test("the public storage and AI boundaries are fail-closed and accurately disclosed", async () => {
-  const [environment, route, rateCore, rateLimit, schema, database, runtimeSchema, migration, app, privacy] = await Promise.all([
+  const [environment, route, rateCore, rateLimit, schema, database, runtimeSchema, migration, app, privacy, privacyPage] = await Promise.all([
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
     readFile(new URL("../app/api/evaluate/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/rate-limit-core.mjs", import.meta.url), "utf8"),
@@ -14,6 +14,7 @@ test("the public storage and AI boundaries are fail-closed and accurately disclo
     readFile(new URL("../drizzle/0003_remove_legacy_storage.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/RealInsightApp.tsx", import.meta.url), "utf8"),
     readFile(new URL("../PRIVACY.md", import.meta.url), "utf8"),
+    readFile(new URL("../app/privacy/page.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(environment, /^REALINSIGHT_AI_ENABLED=false$/m);
@@ -28,13 +29,24 @@ test("the public storage and AI boundaries are fail-closed and accurately disclo
   assert.equal([...migration.matchAll(/DROP TABLE IF EXISTS/g)].length, 3);
   assert.doesNotMatch(migration, /evaluation_requests/);
 
-  for (const disclosure of [app, privacy]) {
+  // app/privacy/page.tsx is the copy a visitor actually reads. Checking only
+  // PRIVACY.md let the rendered page drift from the notice it duplicates.
+  for (const disclosure of [app, privacy, privacyPage]) {
     assert.match(disclosure, /30-day|30 days/);
     assert.match(disclosure, /buyer boundaries/);
     assert.match(disclosure, /confirmed facts/);
     assert.match(disclosure, /evidence/);
     assert.match(disclosure, /OpenAI/);
   }
+
+  // Two hand-maintained copies of one notice can disagree about their own date.
+  const dateOf = (text) => text.match(/Updated ([A-Z][a-z]+ \d{1,2}, \d{4})/)?.[1];
+  assert.ok(dateOf(privacy), "PRIVACY.md must carry an Updated date");
+  assert.equal(
+    dateOf(privacyPage),
+    dateOf(privacy),
+    "the rendered privacy page and PRIVACY.md must report the same date",
+  );
 });
 
 test("repository publication controls are present and npm publishing remains blocked", async () => {
