@@ -102,6 +102,7 @@ The exact release and rollback gates are documented in
 - Operator kill switch
 - Deterministic fallback when AI is unavailable
 - Generic public errors and no provider-detail leakage
+- Security response headers on every response: `nosniff`, `strict-origin-when-cross-origin`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`, and a restricted `Permissions-Policy`
 
 RealInsight is decision support, not real-estate, appraisal, inspection,
 lending, legal, or financial advice.

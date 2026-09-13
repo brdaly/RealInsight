@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for RealInsight. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { withSecurityHeaders } from "../lib/security-headers.mjs";
 
 interface Env {
   ASSETS: Fetcher;
@@ -37,10 +38,10 @@ const worker = {
           const result = await env.IMAGES.input(body).transform(width > 0 ? { width } : {}).output({ format, quality });
           return result.response();
         },
-      }, allowedWidths);
+      }, allowedWidths).then(withSecurityHeaders);
     }
 
-    return handler.fetch(request, env, ctx);
+    return withSecurityHeaders(await handler.fetch(request, env, ctx));
   },
 };
 
