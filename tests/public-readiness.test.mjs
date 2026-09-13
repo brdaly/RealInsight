@@ -55,7 +55,8 @@ test("repository publication controls are present and npm publishing remains blo
   assert.match(workflow, /runtime: node@22\.23\.2/);
   assert.match(workflow, /install: false/);
   assert.doesNotMatch(workflow, /pnpm\/action-setup|actions\/setup-node/);
-  assert.match(workflow, /run: pnpm audit/);
+  assert.match(workflow, /run: pnpm run audit$/m);
+  assert.match(workflow, /run: pnpm run audit:prod$/m);
   assert.match(workflow, /run: pnpm typecheck/);
   assert.match(dependabot, /package-ecosystem: npm/);
   assert.match(security, /Report a vulnerability/);
