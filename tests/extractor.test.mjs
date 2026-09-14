@@ -104,3 +104,44 @@ test("a non-breaking space is quoted verbatim, not normalised away", () => {
     "the quote is the exact slice its span names",
   );
 });
+
+// ---------------------------------------------------------------------------
+// Negation has to govern the phrase it negates, not merely appear before it.
+//
+// The first version of this guard scanned the whole clause for a negator
+// anywhere in it. That inverted its own purpose on the commonest listing idiom
+// there is: in "No HOA | 3 beds | 2 baths" the "No" governs the HOA, and
+// treating it as governing the rest of the line discarded two facts the text
+// plainly supports. Losing real facts is the worse failure, because listings
+// say "No HOA" far more often than they say "no 3 beds".
+// ---------------------------------------------------------------------------
+
+test("a negator governing a different subject does not suppress later facts", () => {
+  const { facts } = extractListingWithEvidence(`No HOA | 3 beds | 2 baths${FILLER}`);
+
+  assert.equal(facts.beds, 3);
+  assert.equal(facts.baths, 2);
+});
+
+test("a negator joined by a conjunction does not reach the second clause", () => {
+  const { facts } = extractListingWithEvidence(`No HOA and the home has 3 beds.${FILLER}`);
+
+  assert.equal(facts.beds, 3);
+});
+
+test("a hyphenated negator still negates", () => {
+  // "-" is a separator inside a word, not a clause boundary. Treating it as a
+  // boundary let "not-active" through as status "active", the exact inversion
+  // this guard exists to prevent.
+  assert.equal(extractListingWithEvidence(`Status: not-active.${FILLER}`).facts.status, "unknown");
+  assert.equal(extractListingWithEvidence(`Status: no-longer active.${FILLER}`).facts.status, "unknown");
+});
+
+test("a negator separated from the match by a modifier still negates", () => {
+  assert.equal(extractListingWithEvidence(`Home without 3 beds listed.${FILLER}`).facts.beds, null);
+  assert.equal(extractListingWithEvidence(`There are no more 3 beds here.${FILLER}`).facts.beds, null);
+});
+
+test("a contraction negator is recognised", () => {
+  assert.equal(extractListingWithEvidence(`Status: isn't active right now.${FILLER}`).facts.status, "unknown");
+});
