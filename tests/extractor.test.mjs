@@ -145,3 +145,43 @@ test("a negator separated from the match by a modifier still negates", () => {
 test("a contraction negator is recognised", () => {
   assert.equal(extractListingWithEvidence(`Status: isn't active right now.${FILLER}`).facts.status, "unknown");
 });
+
+// ---------------------------------------------------------------------------
+// The gap between a negator and the fact it governs is horizontal space, or a
+// single hyphen with nothing around it.
+//
+// Allowing any whitespace let a negator at the end of a line govern the first
+// fact on the next one, which is the same silent fact loss as the pipe case and
+// lands on the commonest layout in listing copy: a spec sheet with one field
+// per line. "HOA: No" answers the HOA, not the bedroom count below it.
+// ---------------------------------------------------------------------------
+
+test("a negator ending a line does not govern the next line", () => {
+  const { facts } = extractListingWithEvidence(`HOA: No\n3 beds | 2 baths${FILLER}`);
+
+  assert.equal(facts.beds, 3);
+  assert.equal(facts.baths, 2);
+});
+
+test("a spec-sheet no does not suppress the field beneath it", () => {
+  assert.equal(extractListingWithEvidence(`Pets allowed: No\n3 beds${FILLER}`).facts.beds, 3);
+  assert.equal(extractListingWithEvidence(`Garage: No\nStatus: Active${FILLER}`).facts.status, "active");
+  assert.equal(extractListingWithEvidence(`Waterfront: No\n1,610 sq ft${FILLER}`).facts.squareFeet, 1610);
+  assert.equal(extractListingWithEvidence(`Rented: Never\n4 beds${FILLER}`).facts.beds, 4);
+});
+
+test("a spaced hyphen separates items rather than binding the negator", () => {
+  // Only an intra-word hyphen binds, which is what lets "not-active" negate
+  // while "no - 3 beds" keeps the bedrooms.
+  const { facts } = extractListingWithEvidence(`HOA: no - 3 beds - 2 baths${FILLER}`);
+
+  assert.equal(facts.beds, 3);
+  assert.equal(facts.baths, 2);
+});
+
+test("an ordinary hyphenated adjective is not read as a negator", () => {
+  const { facts } = extractListingWithEvidence(`Mid-century 3 beds 2 baths, Status: Active.${FILLER}`);
+
+  assert.equal(facts.beds, 3);
+  assert.equal(facts.status, "active");
+});
