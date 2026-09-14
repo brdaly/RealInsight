@@ -185,3 +185,40 @@ test("an ordinary hyphenated adjective is not read as a negator", () => {
   assert.equal(facts.beds, 3);
   assert.equal(facts.status, "active");
 });
+
+// A negator reaches across an ordinary predicate or adverb, which anchoring the
+// pattern on the match did not allow. "does not have 3 beds" reported beds: 3
+// and "Status: not currently active" reported "active" — the same inversion the
+// guard exists to prevent, on phrasing at least as common as the spec-sheet
+// layout the anchoring was introduced for.
+test("a negator reaches across an intervening predicate", () => {
+  assert.equal(extractListingWithEvidence(`This home does not have 3 beds.${FILLER}`).facts.beds, null);
+  assert.equal(extractListingWithEvidence(`The listing does not include 1,610 sq ft${FILLER}`).facts.squareFeet, null);
+  assert.equal(extractListingWithEvidence(`It doesn't offer 2 baths${FILLER}`).facts.baths, null);
+});
+
+test("a negator reaches across an intervening adverb", () => {
+  assert.equal(extractListingWithEvidence(`Status: not currently active${FILLER}`).facts.status, "unknown");
+  assert.equal(extractListingWithEvidence(`Status: no longer actively for sale${FILLER}`).facts.status, "unknown");
+});
+
+test("cannot is a negator", () => {
+  assert.equal(extractListingWithEvidence(`The annexe cannot hold 3 beds${FILLER}`).facts.beds, null);
+});
+
+test("a negator does not reach across more than a few words", () => {
+  // The backstop for prose carrying neither a boundary nor a conjunction. It
+  // fails towards reporting nothing, never towards reporting the opposite.
+  const { facts } = extractListingWithEvidence(
+    `No HOA here as the previous owners finally settled it 3 beds${FILLER}`,
+  );
+
+  assert.equal(facts.beds, 3);
+});
+
+test("the nearest negator governs, not the first one in the window", () => {
+  // "never" governs the garage; the phrase before the beds is affirmative.
+  const { facts } = extractListingWithEvidence(`Never a garage, but the house has 3 beds${FILLER}`);
+
+  assert.equal(facts.beds, 3);
+});

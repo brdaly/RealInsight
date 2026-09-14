@@ -27,6 +27,7 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { readdir, stat } from "node:fs/promises";
 import { createServer } from "node:net";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
@@ -82,10 +83,17 @@ async function buildStaleness(root) {
     } catch {
       continue;
     }
+    const baseDir = fileURLToPath(base);
     for (const entry of entries) {
-      const path = new URL(`${entry.parentPath ?? base.pathname}/${entry.name}`.replace(/\/+/g, "/"), "file:");
-      const info = await stat(path).catch(() => null);
-      if (info) consider(info.mtimeMs, `${dir}/${entry.name}`);
+      // Joined as a filesystem path rather than interpolated into a URL. On
+      // Windows `parentPath` is `C:\…`, which `new URL(…, "file:")` reads as
+      // the scheme `c:`; `stat` then rejects it, the catch swallows every
+      // recursive entry, and only the top-level directory mtimes remain.
+      // Editing a nested source file changes no directory's mtime, so the
+      // guard would call a stale build current — the false pass it exists for.
+      const entryPath = path.join(entry.parentPath ?? baseDir, entry.name);
+      const info = await stat(entryPath).catch(() => null);
+      if (info) consider(info.mtimeMs, path.relative(fileURLToPath(root), entryPath));
     }
   }
 
