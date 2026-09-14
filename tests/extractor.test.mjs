@@ -269,3 +269,33 @@ test("not only, but also states the fact rather than denying it", () => {
   // it belongs to exceeds the number rather than withholding it.
   assert.equal(extractListingWithEvidence(`Not only 3 beds, but also a studio${FILLER}`).facts.beds, 3);
 });
+
+// Round four on this guard. Each of the three below was introduced by the fix
+// for the round before it, which is the argument in the module header for
+// keeping the whole corpus in one place and running it in both directions.
+test("an imperative is not a statement about capacity", () => {
+  // "take" was added as a capacity verb and is far more often an imperative.
+  assert.equal(extractListingWithEvidence(`Don't take this 3 bed home for granted${FILLER}`).facts.beds, 3);
+});
+
+test("an adjective ending in -ly is not an adverb the negator reaches across", () => {
+  // The negation governs the price, not the bedroom count, in either case.
+  assert.equal(extractListingWithEvidence(`This is not a costly 3 bed home${FILLER}`).facts.beds, 3);
+  assert.equal(extractListingWithEvidence(`THIS IS NOT A COSTLY 3 BED HOME${FILLER}`).facts.beds, 3);
+});
+
+test("only still carries a negation that is not the additive idiom", () => {
+  // Excluding "only" everywhere turned one idiom into a rule that suppressed
+  // real negations: here the three is denied and the four is the fact.
+  assert.equal(
+    extractListingWithEvidence(`The home never had only 3 beds; it was built with 4 beds${FILLER}`).facts.beds,
+    4,
+  );
+  assert.equal(extractListingWithEvidence(`Not only 3 beds, but also a studio${FILLER}`).facts.beds, 3);
+});
+
+test("a negated attributive phrase is still negated", () => {
+  // The counterpart of the -ly case: here the negation governs the whole noun
+  // phrase, and nothing in the gap says otherwise.
+  assert.equal(extractListingWithEvidence(`The property is not a 3 bed home${FILLER}`).facts.beds, null);
+});
