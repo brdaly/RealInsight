@@ -239,9 +239,33 @@ test("the gap is judged by the kind of word, not only its length", () => {
   // Same two-word gap, opposite readings: a verb of having carries the
   // negation, an unrelated verb does not.
   assert.equal(extractListingWithEvidence(`It does not currently have 3 beds${FILLER}`).facts.beds, null);
-  assert.equal(extractListingWithEvidence(`It does not simply want 3 beds${FILLER}`).facts.beds, 3);
+  assert.equal(extractListingWithEvidence(`Don't overlook the charming 3 bed home${FILLER}`).facts.beds, 3);
 });
 
 test("an adverb between the negator and the status still negates", () => {
   assert.equal(extractListingWithEvidence(`Status: no longer actively for sale${FILLER}`).facts.status, "unknown");
+});
+
+// The list of verbs that carry a negation onto a following fact has to cover the
+// ones listing copy actually uses for capacity. An unrecognised one reports the
+// fact instead of suppressing it, which is the inversion direction.
+test("a verb of capacity carries the negation", () => {
+  assert.equal(extractListingWithEvidence(`This room cannot fit 3 beds${FILLER}`).facts.beds, null);
+  assert.equal(extractListingWithEvidence(`The annexe does not house 3 beds${FILLER}`).facts.beds, null);
+  assert.equal(extractListingWithEvidence(`The floor will not support 2 baths${FILLER}`).facts.baths, null);
+});
+
+test("copy set in capitals reads the same as copy in lower case", () => {
+  assert.equal(
+    extractListingWithEvidence(`THIS ROOM CANNOT COMFORTABLY ACCOMMODATE 3 BEDS${FILLER}`).facts.beds,
+    extractListingWithEvidence(`This room cannot comfortably accommodate 3 beds${FILLER}`).facts.beds,
+  );
+  assert.equal(extractListingWithEvidence(`THIS ROOM CANNOT COMFORTABLY ACCOMMODATE 3 BEDS${FILLER}`).facts.beds, null);
+  assert.equal(extractListingWithEvidence(`NO HOA | 3 BEDS | 2 BATHS${FILLER}`).facts.beds, 3);
+});
+
+test("not only, but also states the fact rather than denying it", () => {
+  // "only" is shaped like an adverb the negator reaches across, and the idiom
+  // it belongs to exceeds the number rather than withholding it.
+  assert.equal(extractListingWithEvidence(`Not only 3 beds, but also a studio${FILLER}`).facts.beds, 3);
 });
