@@ -32,7 +32,16 @@ import test from "node:test";
 
 const ASSETS = ["og.png", "social-preview.jpg"];
 /** Source trees whose changes invalidate the build. */
-const SOURCE_DIRS = ["app", "lib", "worker", "db"];
+const SOURCE_DIRS = ["app", "lib", "worker", "db", "build", "public"];
+
+/** Single files that invalidate the build the same way a source tree does. */
+const SOURCE_FILES = [
+  "vite.config.ts",
+  "next.config.ts",
+  "postcss.config.mjs",
+  "package.json",
+  ".openai/hosting.json",
+];
 
 /**
  * Why the build cannot be trusted, or null when it is current.
@@ -50,8 +59,23 @@ async function buildStaleness(root) {
 
   let newestSource = 0;
   let newestPath = "";
+  const consider = (mtimeMs, label) => {
+    if (mtimeMs > newestSource) {
+      newestSource = mtimeMs;
+      newestPath = label;
+    }
+  };
+
   for (const dir of SOURCE_DIRS) {
     const base = new URL(`${dir}/`, root);
+    // Directories count, not only files. Deleting or renaming a source file
+    // touches the parent directory's mtime and no surviving file's, so a
+    // file-only scan calls a checkout that removed source "current" — the
+    // original false pass, in the branch-switch case this guard exists for.
+    const baseInfo = await stat(base).catch(() => null);
+    if (!baseInfo) continue;
+    consider(baseInfo.mtimeMs, dir);
+
     let entries;
     try {
       entries = await readdir(base, { withFileTypes: true, recursive: true });
@@ -59,14 +83,15 @@ async function buildStaleness(root) {
       continue;
     }
     for (const entry of entries) {
-      if (!entry.isFile()) continue;
       const path = new URL(`${entry.parentPath ?? base.pathname}/${entry.name}`.replace(/\/+/g, "/"), "file:");
       const info = await stat(path).catch(() => null);
-      if (info && info.mtimeMs > newestSource) {
-        newestSource = info.mtimeMs;
-        newestPath = `${dir}/${entry.name}`;
-      }
+      if (info) consider(info.mtimeMs, `${dir}/${entry.name}`);
     }
+  }
+
+  for (const file of SOURCE_FILES) {
+    const info = await stat(new URL(file, root)).catch(() => null);
+    if (info) consider(info.mtimeMs, file);
   }
 
   return newestSource > built.mtimeMs
