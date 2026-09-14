@@ -222,3 +222,26 @@ test("the nearest negator governs, not the first one in the window", () => {
 
   assert.equal(facts.beds, 3);
 });
+
+// A short gap is proximity, not grammatical scope. Counting words alone
+// suppressed the commonest affirmative idiom in listing copy: "Don't miss" puts
+// a negator three words from the fact while governing the reader, not the house.
+test("an affirmative idiom that opens with a negator keeps its facts", () => {
+  assert.equal(extractListingWithEvidence(`Don't miss this charming 3 bed home${FILLER}`).facts.beds, 3);
+  assert.equal(extractListingWithEvidence(`Do not miss 3 beds${FILLER}`).facts.beds, 3);
+});
+
+test("a negator governing occupancy does not suppress the bedroom count", () => {
+  assert.equal(extractListingWithEvidence(`Never lived in 3 bed home${FILLER}`).facts.beds, 3);
+});
+
+test("the gap is judged by the kind of word, not only its length", () => {
+  // Same two-word gap, opposite readings: a verb of having carries the
+  // negation, an unrelated verb does not.
+  assert.equal(extractListingWithEvidence(`It does not currently have 3 beds${FILLER}`).facts.beds, null);
+  assert.equal(extractListingWithEvidence(`It does not simply want 3 beds${FILLER}`).facts.beds, 3);
+});
+
+test("an adverb between the negator and the status still negates", () => {
+  assert.equal(extractListingWithEvidence(`Status: no longer actively for sale${FILLER}`).facts.status, "unknown");
+});
