@@ -104,3 +104,84 @@ test("a non-breaking space is quoted verbatim, not normalised away", () => {
     "the quote is the exact slice its span names",
   );
 });
+
+// ---------------------------------------------------------------------------
+// Negation has to govern the phrase it negates, not merely appear before it.
+//
+// The first version of this guard scanned the whole clause for a negator
+// anywhere in it. That inverted its own purpose on the commonest listing idiom
+// there is: in "No HOA | 3 beds | 2 baths" the "No" governs the HOA, and
+// treating it as governing the rest of the line discarded two facts the text
+// plainly supports. Losing real facts is the worse failure, because listings
+// say "No HOA" far more often than they say "no 3 beds".
+// ---------------------------------------------------------------------------
+
+test("a negator governing a different subject does not suppress later facts", () => {
+  const { facts } = extractListingWithEvidence(`No HOA | 3 beds | 2 baths${FILLER}`);
+
+  assert.equal(facts.beds, 3);
+  assert.equal(facts.baths, 2);
+});
+
+test("a negator joined by a conjunction does not reach the second clause", () => {
+  const { facts } = extractListingWithEvidence(`No HOA and the home has 3 beds.${FILLER}`);
+
+  assert.equal(facts.beds, 3);
+});
+
+test("a hyphenated negator still negates", () => {
+  // "-" is a separator inside a word, not a clause boundary. Treating it as a
+  // boundary let "not-active" through as status "active", the exact inversion
+  // this guard exists to prevent.
+  assert.equal(extractListingWithEvidence(`Status: not-active.${FILLER}`).facts.status, "unknown");
+  assert.equal(extractListingWithEvidence(`Status: no-longer active.${FILLER}`).facts.status, "unknown");
+});
+
+test("a negator separated from the match by a modifier still negates", () => {
+  assert.equal(extractListingWithEvidence(`Home without 3 beds listed.${FILLER}`).facts.beds, null);
+  assert.equal(extractListingWithEvidence(`There are no more 3 beds here.${FILLER}`).facts.beds, null);
+});
+
+test("a contraction negator is recognised", () => {
+  assert.equal(extractListingWithEvidence(`Status: isn't active right now.${FILLER}`).facts.status, "unknown");
+});
+
+// ---------------------------------------------------------------------------
+// The gap between a negator and the fact it governs is horizontal space, or a
+// single hyphen with nothing around it.
+//
+// Allowing any whitespace let a negator at the end of a line govern the first
+// fact on the next one, which is the same silent fact loss as the pipe case and
+// lands on the commonest layout in listing copy: a spec sheet with one field
+// per line. "HOA: No" answers the HOA, not the bedroom count below it.
+// ---------------------------------------------------------------------------
+
+test("a negator ending a line does not govern the next line", () => {
+  const { facts } = extractListingWithEvidence(`HOA: No\n3 beds | 2 baths${FILLER}`);
+
+  assert.equal(facts.beds, 3);
+  assert.equal(facts.baths, 2);
+});
+
+test("a spec-sheet no does not suppress the field beneath it", () => {
+  assert.equal(extractListingWithEvidence(`Pets allowed: No\n3 beds${FILLER}`).facts.beds, 3);
+  assert.equal(extractListingWithEvidence(`Garage: No\nStatus: Active${FILLER}`).facts.status, "active");
+  assert.equal(extractListingWithEvidence(`Waterfront: No\n1,610 sq ft${FILLER}`).facts.squareFeet, 1610);
+  assert.equal(extractListingWithEvidence(`Rented: Never\n4 beds${FILLER}`).facts.beds, 4);
+});
+
+test("a spaced hyphen separates items rather than binding the negator", () => {
+  // Only an intra-word hyphen binds, which is what lets "not-active" negate
+  // while "no - 3 beds" keeps the bedrooms.
+  const { facts } = extractListingWithEvidence(`HOA: no - 3 beds - 2 baths${FILLER}`);
+
+  assert.equal(facts.beds, 3);
+  assert.equal(facts.baths, 2);
+});
+
+test("an ordinary hyphenated adjective is not read as a negator", () => {
+  const { facts } = extractListingWithEvidence(`Mid-century 3 beds 2 baths, Status: Active.${FILLER}`);
+
+  assert.equal(facts.beds, 3);
+  assert.equal(facts.status, "active");
+});

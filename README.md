@@ -102,7 +102,7 @@ The exact release and rollback gates are documented in
 - Operator kill switch
 - Deterministic fallback when AI is unavailable
 - Generic public errors and no provider-detail leakage
-- Security response headers on every response the Worker serves, which is every document, API route and `public/` file: `nosniff`, `strict-origin-when-cross-origin`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`, and a restricted `Permissions-Policy`. Build output under `/_next/static/` is served by the asset layer ahead of the Worker and does not carry them
+- Security response headers on every response the Worker serves, which is every document and API route: `nosniff`, `strict-origin-when-cross-origin`, `frame-ancestors 'none'`, `base-uri 'self'`, `form-action 'self'`, and a restricted `Permissions-Policy`. **Static files do not carry them in deployment.** The generated Wrangler config sets `assets.directory` without `run_worker_first`, so under Cloudflare's default asset routing anything matching a static file, both `public/` and `/_next/static/`, is served before the Worker runs. Closing that gap means invoking the Worker on every asset request, which is a cost decision rather than an oversight
 
 RealInsight is decision support, not real-estate, appraisal, inspection,
 lending, legal, or financial advice.
@@ -127,7 +127,7 @@ secret in client code or a public field.
 
 ## Local development
 
-Prerequisites: Node.js 22.13 or newer and pnpm.
+Prerequisites: Node.js 22.18 or newer and pnpm. The test suite imports TypeScript modules directly, and Node enabled type stripping by default in 22.18.
 
     pnpm install
     pnpm dev
