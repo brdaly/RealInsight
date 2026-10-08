@@ -132,6 +132,17 @@ Prerequisites: Node.js 22.18 or newer and pnpm. The test suite imports TypeScrip
     pnpm install
     pnpm dev
 
+To preview the compiled Cloudflare Worker locally:
+
+    pnpm build
+    pnpm start
+
+`pnpm start` uses Wrangler with local bindings and the generated deployment
+config. It does not deploy or connect to production resources. Matching static
+assets retain the default asset-first routing described above. The asset
+regression test uses a temporary Worker-first config to verify response bodies
+and Worker headers; it does not establish deployed static-asset header coverage.
+
 ## Validation
 
     pnpm audit
