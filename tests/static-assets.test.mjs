@@ -11,21 +11,21 @@
  * it is read: `/og.png` and `/social-preview.jpg` served HTTP 200 with zero
  * bytes under `pnpm start`.
  *
- * Only a real request to a real server distinguishes the two, so that is what
- * this does. It relies on `pnpm test` having run the build first.
+ * This now verifies full asset bodies in the compiled Worker runtime. The
+ * historical Node file-stream failure also remains covered by the response
+ * identity assertion in `security-headers.test.mjs`. This test relies on
+ * `pnpm test` having run the build first.
  *
- * Scope, because the name promises more than it proves: this runs against
- * `vinext start`, which routes `public/` files through the Worker. Deployed on
- * Cloudflare the asset layer answers them first, so the header assertion below
- * holds here and not in production. It is kept because the body assertion is
- * the regression guard, and that one is runtime-independent. Header coverage in
- * the deployment has to be checked against
- * `wrangler dev --config dist/server/wrangler.json`.
+ * The packaged server is a Cloudflare Worker, including `cloudflare:workers`
+ * imports, so it must run under Wrangler rather than Node's `vinext start`.
+ * A temporary copy of the generated config routes assets through the Worker
+ * to exercise its response wrapper. Production's asset-first routing remains
+ * unchanged; this header assertion covers the Worker response contract only.
  */
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
-import { readdir, stat } from "node:fs/promises";
+import { readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -148,9 +148,23 @@ test("static assets are served with their full bodies and the security headers",
 
   const port = await freePort();
   const origin = `http://127.0.0.1:${port}`;
-  const server = spawn(fileURLToPath(new URL("../node_modules/.bin/vinext", import.meta.url)), ["start"], {
+  const configUrl = new URL(`../dist/server/static-assets-test-${process.pid}.json`, import.meta.url);
+  const config = JSON.parse(await readFile(new URL("../dist/server/wrangler.json", import.meta.url), "utf8"));
+  config.assets = { ...config.assets, binding: "ASSETS", run_worker_first: true };
+  await writeFile(configUrl, JSON.stringify(config));
+  t.after(() => rm(configUrl, { force: true }));
+
+  const server = spawn(fileURLToPath(new URL("../node_modules/.bin/wrangler", import.meta.url)), [
+    "dev", "--config", fileURLToPath(configUrl), "--local", "--ip", "127.0.0.1",
+    "--port", String(port), "--show-interactive-dev-session", "false",
+    "--persist-to", `.wrangler/static-assets-test-${process.pid}`,
+  ], {
     cwd: fileURLToPath(new URL("..", import.meta.url)),
-    env: { ...process.env, PORT: String(port) },
+    env: {
+      ...process.env,
+      WRANGLER_SEND_METRICS: "false",
+      WRANGLER_LOG_PATH: ".wrangler/static-assets-test.log",
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
 
@@ -162,6 +176,10 @@ test("static assets are served with their full bodies and the security headers",
     server.kill("SIGTERM");
     await Promise.race([once(server, "exit"), new Promise((r) => setTimeout(r, 5_000))]);
     if (server.exitCode === null) server.kill("SIGKILL");
+    await rm(new URL(`../.wrangler/static-assets-test-${process.pid}/`, import.meta.url), {
+      force: true,
+      recursive: true,
+    });
   });
 
   const ready = await waitForServer(origin, Date.now() + START_TIMEOUT_MS);
@@ -180,14 +198,13 @@ test("static assets are served with their full bodies and the security headers",
       `${name} was served ${body.byteLength} bytes but is ${onDisk.size} bytes on disk`,
     );
 
-    // True under `vinext start`, which routes public/ through the Worker. NOT
-    // true once deployed, where the asset layer answers first. See the header
-    // comment: this asserts the local contract, and the byte-length check above
-    // is the part that guards the regression in any runtime.
+    // The test config sends assets through the Worker to exercise its wrapper.
+    // Production serves matching assets first, so deployed header coverage
+    // must be assessed separately. The full-body assertion applies to both.
     assert.equal(
       response.headers.get("X-Content-Type-Options"),
       "nosniff",
-      `${name} should carry the security headers under vinext start`,
+      `${name} should carry the security headers when served through the Worker`,
     );
   }
 });

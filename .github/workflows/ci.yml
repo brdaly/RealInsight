@@ -33,9 +33,6 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Audit dependencies (full tree)
-        run: pnpm run audit
-
       - name: Audit production dependencies
         run: pnpm run audit:prod
 
@@ -53,3 +50,6 @@ jobs:
 
       - name: Test
         run: pnpm test:unit
+
+      - name: Audit dependencies (full tree)
+        run: pnpm run audit
