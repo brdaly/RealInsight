@@ -69,6 +69,25 @@ test("repository publication controls are present and npm publishing remains blo
   assert.doesNotMatch(workflow, /pnpm\/action-setup|actions\/setup-node/);
   assert.match(workflow, /run: pnpm run audit$/m);
   assert.match(workflow, /run: pnpm run audit:prod$/m);
+
+  // Both audits must come after every application check. Asserting only that
+  // the steps exist is what let `main` sit red from 2026-10-01 with lint,
+  // typecheck, build and tests never reaching the runner: a failing step
+  // aborts the job, so an audit upstream of them turns "a dependency has an
+  // advisory" into "we do not know whether the code works". Position is the
+  // invariant, not presence.
+  const stepOrder = ["pnpm lint", "pnpm typecheck", "pnpm build", "pnpm verify:package", "pnpm test:unit"]
+    .map((step) => ({ step, at: workflow.indexOf(`run: ${step}`) }));
+  for (const { step, at } of stepOrder) {
+    assert.ok(at > 0, `ci.yml must run ${step}`);
+  }
+  const lastCheck = Math.max(...stepOrder.map(({ at }) => at));
+  for (const audit of ["pnpm run audit:prod", "pnpm run audit"]) {
+    assert.ok(
+      workflow.indexOf(`run: ${audit}`) > lastCheck,
+      `ci.yml must run ${audit} after every application check, not before`,
+    );
+  }
   assert.match(workflow, /run: pnpm typecheck/);
   assert.match(dependabot, /package-ecosystem: npm/);
   assert.match(security, /Report a vulnerability/);

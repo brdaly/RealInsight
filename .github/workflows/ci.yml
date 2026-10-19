@@ -33,9 +33,15 @@ jobs:
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Audit production dependencies
-        run: pnpm run audit:prod
-
+      # The application checks run first, and both audits last. Moving only the
+      # full-tree audit to the end is not enough: an audit anywhere upstream of
+      # these steps couples "a dependency has an advisory" to "we do not know
+      # whether the code works", because a failing step aborts the job. That
+      # coupling is what cost this repository every lint, typecheck, build and
+      # test result on `main` from 2026-10-01, and it would have recurred on
+      # the next production advisory with `audit:prod` still sitting first.
+      # Ordering removes the coupling; the job still fails on a real finding,
+      # it just reports the code's state too.
       - name: Lint
         run: pnpm lint
 
@@ -50,6 +56,9 @@ jobs:
 
       - name: Test
         run: pnpm test:unit
+
+      - name: Audit production dependencies
+        run: pnpm run audit:prod
 
       - name: Audit dependencies (full tree)
         run: pnpm run audit
