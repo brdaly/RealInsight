@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildEvidenceLedger, addVisitorConfirmations } from "../lib/evidence-ledger.mjs";
-import { extractListingWithEvidence } from "../lib/extractor.mjs";
+import { extractListing, extractListingWithEvidence } from "../lib/extractor.mjs";
 
 const listing = `Synthetic example
 $382,000 | 3 beds | 2 baths | 1,610 sq ft
@@ -298,4 +298,37 @@ test("a negated attributive phrase is still negated", () => {
   // The counterpart of the -ly case: here the negation governs the whole noun
   // phrase, and nothing in the gap says otherwise.
   assert.equal(extractListingWithEvidence(`The property is not a 3 bed home${FILLER}`).facts.beds, null);
+});
+
+test("a seven-figure price with one leading digit is read, not skipped", () => {
+  // The pattern required two digits before the first comma group, so every
+  // price from $1,000,000 to $9,999,999 extracted as null while
+  // lib/evaluation-guard.ts advertised support up to $50,000,000.
+  for (const [text, expected] of [
+    ["Offered at $1,250,000. Lovely home.", 1250000],
+    ["Offered at $2,400,000.", 2400000],
+    ["USD 1,150,000 for this home.", 1150000],
+    ["Offered at $9,999,999.", 9999999],
+    ["Offered at $10,250,000.", 10250000],
+    ["Classic home at $382,000.", 382000],
+  ]) {
+    assert.equal(extractListing(text).askingPrice, expected, text);
+  }
+});
+
+test("the asking price is not taken from a smaller figure elsewhere in the text", () => {
+  // Worse than returning null: skipping the real price let a later dollar
+  // amount match instead, and the evidence span then pointed at it. With a
+  // $900,000 budget the first case scored as "within your stated maximum".
+  const taxes = extractListingWithEvidence(
+    "Asking price: $1,100,000. Annual taxes $12,500. 4 beds, 3 baths.",
+  );
+  assert.equal(taxes.facts.askingPrice, 1100000);
+  assert.equal(taxes.matches.askingPrice.quote, "$1,100,000");
+
+  const comps = extractListingWithEvidence(
+    "Offered at $1,250,000. Recent comps sold for $985,000 nearby.",
+  );
+  assert.equal(comps.facts.askingPrice, 1250000);
+  assert.equal(comps.matches.askingPrice.quote, "$1,250,000");
 });
