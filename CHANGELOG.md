@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `wrangler` to 4.129.0, `vinext` to 1.0.0-beta.9, `@types/react-dom` to 19.2.7.
 
 ### Fixed
+- Preview the compiled Cloudflare Worker with local Wrangler rather than the
+  Node server, which cannot load the Worker's `cloudflare:workers` imports.
+  Run the asset regression test in the Worker runtime, with a temporary
+  Worker-first asset binding that leaves deployment routing unchanged.
+- Preserve the owning response in the mutable-header stream regression test.
 - Corrected the 0.1.0 release date, which had been recorded as 2024.
 - Rewrote this entry and `CONTRIBUTING.md`, both of which described
   subsystems the application does not contain.

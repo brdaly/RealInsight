@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildEvidenceLedger, addVisitorConfirmations } from "../lib/evidence-ledger.mjs";
-import { extractListingWithEvidence } from "../lib/extractor.mjs";
+import { extractListing, extractListingWithEvidence } from "../lib/extractor.mjs";
 
 const listing = `Synthetic example
 $382,000 | 3 beds | 2 baths | 1,610 sq ft
@@ -268,4 +268,67 @@ test("not only, but also states the fact rather than denying it", () => {
   // "only" is shaped like an adverb the negator reaches across, and the idiom
   // it belongs to exceeds the number rather than withholding it.
   assert.equal(extractListingWithEvidence(`Not only 3 beds, but also a studio${FILLER}`).facts.beds, 3);
+});
+
+// Round four on this guard. Each of the three below was introduced by the fix
+// for the round before it, which is the argument in the module header for
+// keeping the whole corpus in one place and running it in both directions.
+test("an imperative is not a statement about capacity", () => {
+  // "take" was added as a capacity verb and is far more often an imperative.
+  assert.equal(extractListingWithEvidence(`Don't take this 3 bed home for granted${FILLER}`).facts.beds, 3);
+});
+
+test("an adjective ending in -ly is not an adverb the negator reaches across", () => {
+  // The negation governs the price, not the bedroom count, in either case.
+  assert.equal(extractListingWithEvidence(`This is not a costly 3 bed home${FILLER}`).facts.beds, 3);
+  assert.equal(extractListingWithEvidence(`THIS IS NOT A COSTLY 3 BED HOME${FILLER}`).facts.beds, 3);
+});
+
+test("only still carries a negation that is not the additive idiom", () => {
+  // Excluding "only" everywhere turned one idiom into a rule that suppressed
+  // real negations: here the three is denied and the four is the fact.
+  assert.equal(
+    extractListingWithEvidence(`The home never had only 3 beds; it was built with 4 beds${FILLER}`).facts.beds,
+    4,
+  );
+  assert.equal(extractListingWithEvidence(`Not only 3 beds, but also a studio${FILLER}`).facts.beds, 3);
+});
+
+test("a negated attributive phrase is still negated", () => {
+  // The counterpart of the -ly case: here the negation governs the whole noun
+  // phrase, and nothing in the gap says otherwise.
+  assert.equal(extractListingWithEvidence(`The property is not a 3 bed home${FILLER}`).facts.beds, null);
+});
+
+test("a seven-figure price with one leading digit is read, not skipped", () => {
+  // The pattern required two digits before the first comma group, so every
+  // price from $1,000,000 to $9,999,999 extracted as null while
+  // lib/evaluation-guard.ts advertised support up to $50,000,000.
+  for (const [text, expected] of [
+    ["Offered at $1,250,000. Lovely home.", 1250000],
+    ["Offered at $2,400,000.", 2400000],
+    ["USD 1,150,000 for this home.", 1150000],
+    ["Offered at $9,999,999.", 9999999],
+    ["Offered at $10,250,000.", 10250000],
+    ["Classic home at $382,000.", 382000],
+  ]) {
+    assert.equal(extractListing(text).askingPrice, expected, text);
+  }
+});
+
+test("the asking price is not taken from a smaller figure elsewhere in the text", () => {
+  // Worse than returning null: skipping the real price let a later dollar
+  // amount match instead, and the evidence span then pointed at it. With a
+  // $900,000 budget the first case scored as "within your stated maximum".
+  const taxes = extractListingWithEvidence(
+    "Asking price: $1,100,000. Annual taxes $12,500. 4 beds, 3 baths.",
+  );
+  assert.equal(taxes.facts.askingPrice, 1100000);
+  assert.equal(taxes.matches.askingPrice.quote, "$1,100,000");
+
+  const comps = extractListingWithEvidence(
+    "Offered at $1,250,000. Recent comps sold for $985,000 nearby.",
+  );
+  assert.equal(comps.facts.askingPrice, 1250000);
+  assert.equal(comps.matches.askingPrice.quote, "$1,250,000");
 });

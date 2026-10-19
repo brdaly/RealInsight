@@ -52,3 +52,47 @@ Days on market: 22
 The property is not tenant occupied and includes a two-car garage.`);
   assert.notEqual(result.decision, "stop");
 });
+
+test("a must-have the listing explicitly denies is never reported as supported", () => {
+  // The rule engine kept its own negation guard recognising only
+  // no/not/without/never, so each of these reported the phrase as supported
+  // and attached an exact character span to text saying the opposite. It now
+  // shares the extractor's rule.
+  for (const text of [
+    "Unfortunately the property doesn't have a garage.",
+    "This home lacks a garage.",
+    "Missing a garage.",
+    "The lot cannot accommodate a garage.",
+    "Neither a garage nor a carport.",
+    "Excluding the garage, everything is new.",
+    "There is no garage.",
+  ]) {
+    assert.equal(findSupportedPhrase(text, "garage"), null, text);
+  }
+});
+
+test("a genuine must-have still matches when a negator governs something else", () => {
+  for (const text of [
+    "Two-car garage included.",
+    "No HOA, and a lovely two-car garage.",
+    "Don't miss the two-car garage.",
+  ]) {
+    assert.ok(findSupportedPhrase(text, "garage"), text);
+  }
+});
+
+test("a denied must-have does not reach the decision as supported evidence", () => {
+  const denied = `Synthetic example
+$382,000 | 3 beds | 2 baths | 1,610 sq ft
+Status: Active
+Unfortunately the property doesn't have a garage.`;
+  const decision = evaluate(denied, {
+    maxBudget: 450000,
+    mustHave: "garage",
+    dealBreaker: "cash only",
+  });
+  const mustHave = decision.findings.find((finding) => finding.kind === "must_have");
+  assert.equal(mustHave.outcome, "unknown");
+  assert.deepEqual(mustHave.evidenceIds, []);
+  assert.notEqual(decision.decision, "tour_candidate");
+});
