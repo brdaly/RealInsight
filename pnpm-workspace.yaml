@@ -3,12 +3,18 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
   workerd: true
+# Each entry tracks a published advisory and is expressed as a version range
+# rather than a dependency path (`parent>child`), so it keeps matching when a
+# parent's version moves. Drop an entry once the tree resolves above the
+# patched version on its own.
 overrides:
-  "brace-expansion@<1.1.18": 1.1.18
-  "brace-expansion@>=5.0.0 <5.0.9": 5.0.9
+  "brace-expansion@>=1.0.0 <1.1.21": 1.1.21 # GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p, GHSA-q2hr-2g5m-vwhr
+  "brace-expansion@>=5.0.0 <5.0.12": 5.0.12 # GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p, GHSA-q2hr-2g5m-vwhr
   "esbuild@<0.24.3": 0.25.12 # GHSA-67mh-4wv8-2f99
-  "fast-uri@<3.1.6": 3.1.6
-  "fflate@>=0.7.0 <0.7.5": 0.7.5
-  "js-yaml@<4.3.2": 4.3.2
-  "sharp@<0.35.4": 0.35.4
-  "nanoid@<3.3.18": 3.3.18
+  "fast-uri@>=3.0.0 <3.1.9": 3.1.9 # GHSA-qw65-cvwx-89v3, GHSA-58mr-gqgx-xq4g, GHSA-hrr3-gc8f-f4qj, GHSA-w74x-v6f9-j3xg, GHSA-wjr9-j795-jxcr, GHSA-333x-w4r6-6crp
+  "fflate@>=0.7.0 <0.7.5": 0.7.5 # GHSA-px8p-9vwx-vf98
+  "js-yaml@<4.3.2": 4.3.2 # GHSA-2883-xcg3-v3hh
+  "nanoid@<3.3.18": 3.3.18 # GHSA-mwcw-c2x4-8c55
+  "sharp@<0.35.5": 0.35.5 # GHSA-wq5f-xc86-pv6w
+  "source-map-js@>=1.0.0 <1.2.2": 1.2.2 # GHSA-68fv-2mgg-jv7q
+  "zod@>=4.0.0 <4.6.6": 4.6.6 # GHSA-mrhx-c7xc-m3w5

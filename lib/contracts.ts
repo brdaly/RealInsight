@@ -65,7 +65,7 @@ export type DecisionResult = {
   evidenceLedger: EvidenceEntry[];
   questions: AgentQuestion[];
   summary: string;
-  scoringVersion: "ri-v2.0";
+  scoringVersion: "ri-v2.1";
   analysisMode: "ai-assisted" | "deterministic-demo";
   analysisNotice: string;
 };

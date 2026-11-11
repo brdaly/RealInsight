@@ -52,3 +52,78 @@ Days on market: 22
 The property is not tenant occupied and includes a two-car garage.`);
   assert.notEqual(result.decision, "stop");
 });
+
+test("a must-have the listing explicitly denies is never reported as supported", () => {
+  // The rule engine kept its own negation guard recognising only
+  // no/not/without/never, so each of these reported the phrase as supported
+  // and attached an exact character span to text saying the opposite. It now
+  // shares the extractor's rule.
+  for (const text of [
+    "Unfortunately the property doesn't have a garage.",
+    "This home lacks a garage.",
+    "Missing a garage.",
+    "The lot cannot accommodate a garage.",
+    "Neither a garage nor a carport.",
+    "Excluding the garage, everything is new.",
+    "There is no garage.",
+  ]) {
+    assert.equal(findSupportedPhrase(text, "garage"), null, text);
+  }
+});
+
+test("a genuine must-have still matches when a negator governs something else", () => {
+  for (const text of [
+    "Two-car garage included.",
+    "No HOA, and a lovely two-car garage.",
+    "Don't miss the two-car garage.",
+  ]) {
+    assert.ok(findSupportedPhrase(text, "garage"), text);
+  }
+});
+
+test("a denied must-have does not reach the decision as supported evidence", () => {
+  const denied = `Synthetic example
+$382,000 | 3 beds | 2 baths | 1,610 sq ft
+Status: Active
+Unfortunately the property doesn't have a garage.`;
+  const decision = evaluate(denied, {
+    maxBudget: 450000,
+    mustHave: "garage",
+    dealBreaker: "cash only",
+  });
+  const mustHave = decision.findings.find((finding) => finding.kind === "must_have");
+  assert.equal(mustHave.outcome, "unknown");
+  assert.deepEqual(mustHave.evidenceIds, []);
+  assert.notEqual(decision.decision, "tour_candidate");
+});
+
+test("an unknown price requires verification even with every other fact known", () => {
+  const result = evaluate(clearFit.replace("$382,000 | ", ""));
+  assert.equal(result.evidenceCoverage, 83);
+  assert.equal(result.decision, "verify_first");
+  assert.equal(result.buyerFitScore, 50);
+  assert.match(result.reasons.join(" "), /asking price is unconfirmed/i);
+  assert.doesNotMatch(result.reasons.join(" "), /price is within budget/i);
+  assert.match(result.questions[0].question, /current asking price/i);
+  assert.equal(result.findings.find((item) => item.kind === "cost").outcome, "unknown");
+});
+
+test("an unknown price cannot suppress a confirmed hard stop", () => {
+  const result = evaluate(clearFit.replace("$382,000 | ", "").replace("Status: Active", "Status: Sold"));
+  assert.equal(result.decision, "stop");
+  assert.equal(result.buyerFitScore, 0);
+});
+
+test("a seven-figure price stops an over-budget listing instead of using its taxes", () => {
+  const result = evaluate(clearFit.replace("$382,000", "Asking price: $1,100,000. Annual taxes $12,500."));
+  assert.equal(result.decision, "stop");
+  assert.match(result.hardStops.join(" "), /above your maximum budget/i);
+});
+
+test("a later affirmative feature supplies the exact supported excerpt", () => {
+  const text = "No garage in the annexe; a detached garage is included with the house.";
+  const match = findSupportedPhrase(text, "garage");
+  assert.ok(match);
+  assert.equal(match.charStart, text.lastIndexOf("garage"));
+  assert.equal(text.slice(match.charStart, match.charEnd), match.quote);
+});

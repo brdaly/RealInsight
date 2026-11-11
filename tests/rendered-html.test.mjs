@@ -24,7 +24,7 @@ test("ships a Daly Ventures governed-agent workflow rather than the legacy ranki
   assert.match(app, /Questions to verify next/);
   assert.match(app, /Agentic does not have to mean uncontrolled/);
   assert.match(app, /Listing text, buyer boundaries, confirmed facts, evidence, and decision briefs are not stored/);
-  assert.match(scoring, /SCORING_VERSION = "ri-v2\.0"/);
+  assert.match(scoring, /SCORING_VERSION = "ri-v2\.1"/);
   assert.match(scoring, /findSupportedPhrase/);
   assert.doesNotMatch(scoring, /offer_range|location_quality|value_vs_comps/);
   assert.match(analysis, /Versioned application code owns every score/);
