@@ -13,8 +13,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
-    name: Audit, lint, build, and test
+  application:
+    name: Lint, build, and test
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -24,7 +24,7 @@ jobs:
           persist-credentials: false
 
       - name: Install pnpm and Node.js
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
         with:
           runtime: node@22.23.2
           cache: true
@@ -32,12 +32,6 @@ jobs:
 
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Audit dependencies (full tree)
-        run: pnpm run audit
-
-      - name: Audit production dependencies
-        run: pnpm run audit:prod
 
       - name: Lint
         run: pnpm lint
@@ -53,3 +47,53 @@ jobs:
 
       - name: Test
         run: pnpm test:unit
+
+  # These jobs have no dependency on validate. A security finding must fail
+  # its gate while still allowing application validation and the other audit
+  # to report their own results.
+  audit:
+    name: Dependency audit (${{ matrix.scope }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scope: full
+            command: pnpm run audit
+          - scope: production
+            command: pnpm run audit:prod
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm and Node.js
+        uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
+        with:
+          runtime: node@22.23.2
+          cache: true
+          install: false
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit dependencies
+        run: ${{ matrix.command }}
+
+  # Preserve the original required-check name while gating both independent
+  # paths. Run even after a dependency fails, and reject skipped/cancelled jobs.
+  validate:
+    name: Audit, lint, build, and test
+    if: always()
+    needs: [application, audit]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require application validation and both audits
+        env:
+          APPLICATION_RESULT: ${{ needs.application.result }}
+          AUDIT_RESULT: ${{ needs.audit.result }}
+        run: |
+          test "$APPLICATION_RESULT" = success
+          test "$AUDIT_RESULT" = success

@@ -8,11 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-- Dependency maintenance on the weekly Dependabot cadence: Next.js and
-  `eslint-config-next` to 16.3.4, `@cloudflare/vite-plugin` to 1.54.4,
-  `wrangler` to 4.129.0, `vinext` to 1.0.0-beta.9, `@types/react-dom` to 19.2.7.
+- Updated the dependency baseline to Next.js 16.4.5, React 19.3.1, vinext 1.4.4,
+  Vite 8.3.6, and Wrangler 4.158.0, with advisory-specific transitive patches.
+- Application validation and the full and production dependency audits run as
+  independent CI jobs. A failed audit no longer prevents application checks
+  from reporting, and each audit retains its high-severity failure gate.
+- Scoring contract `ri-v2.1` requires a known asking price before a listing can
+  become a tour candidate, regardless of aggregate fact coverage.
 
 ### Fixed
+- Extract seven-figure asking prices without substituting taxes or comparable
+  sales. Prefer explicit asking-price labels and leave competing amounts
+  unknown for visitor confirmation.
+- Share negation handling between extraction and feature scoring, preserving
+  exact excerpts from affirmative mentions rather than supporting a feature
+  the listing denies.
+- Preview the compiled Cloudflare Worker with local Wrangler rather than the
+  Node server, which cannot load the Worker's `cloudflare:workers` imports.
+  Run the asset regression test in the Worker runtime, with a temporary
+  Worker-first asset binding that leaves deployment routing unchanged.
+- Preserve the owning response in the mutable-header stream regression test.
 - Corrected the 0.1.0 release date, which had been recorded as 2024.
 - Rewrote this entry and `CONTRIBUTING.md`, both of which described
   subsystems the application does not contain.

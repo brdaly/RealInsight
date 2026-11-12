@@ -47,9 +47,13 @@ scores, an appraisal, an opening-offer range, or a ranked shortlist.
                                v
                      Reviewable decision brief
 
-The scoring contract is versioned as **ri-v2.0**. Unsupported facts do not
+The scoring contract is versioned as **ri-v2.1**. Unsupported facts do not
 receive synthetic credit. A model response cannot override a buyer’s budget or
 deal-breaker and cannot generate a valuation or offer recommendation.
+
+An unknown asking price always requires verification, even when the other
+facts are complete. The extractor prefers an explicitly labelled asking price
+and leaves ambiguous competing amounts unknown for visitor review.
 
 ## Privacy and storage
 
@@ -131,6 +135,17 @@ Prerequisites: Node.js 22.18 or newer and pnpm. The test suite imports TypeScrip
 
     pnpm install
     pnpm dev
+
+To preview the compiled Cloudflare Worker locally:
+
+    pnpm build
+    pnpm start
+
+`pnpm start` uses Wrangler with local bindings and the generated deployment
+config. It does not deploy or connect to production resources. Matching static
+assets retain the default asset-first routing described above. The asset
+regression test uses a temporary Worker-first config to verify response bodies
+and Worker headers; it does not establish deployed static-asset header coverage.
 
 ## Validation
 

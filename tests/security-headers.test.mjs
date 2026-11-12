@@ -86,6 +86,8 @@ test("a stream-backed body is delivered whole", async () => {
 
   const guarded = withSecurityHeaders(original);
 
+  // Retain the stream's owning response when its headers are mutable.
+  assert.equal(guarded, original);
   assert.equal(await guarded.text(), "binary-asset-payload");
   assert.equal(guarded.headers.get("content-type"), "image/png");
   assert.equal(guarded.headers.get("X-Content-Type-Options"), "nosniff");
